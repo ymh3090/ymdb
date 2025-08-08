@@ -1,4 +1,17 @@
-﻿using System.Transactions;
+﻿using System.Text.Json;
+using System.IO;
+using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Json;
+using System.Runtime.Serialization.Formatters;
+using System.Transactions;
 using System.Xml.Serialization;
 using System.Threading;
 using System;
@@ -15,52 +28,56 @@ using System.Text;
 
 namespace ymdb
 {
-
-    public enum MovieStatus
-    {
-        Watched,
-        Watchlisted
-    }
-
-    public class Movie
-    {
-        public string Title { get; set; }
-        public string Director { get; set; }
-        public int ReleaseYear { get; set; }
-        public MovieStatus Status { get; set; }
-        public string genre { get; set; }
-
-        public Movie(string title, string director, int releaseYear, MovieStatus status)
+    /*
+        public enum MovieStatus
         {
-            /*
-            
-            
-            if (releaseYear < 1000 || releaseYear > 9999)
-                throw new ArgumentException("Release year must be a 4-digit number.");
-            if(title.Length > 20)
-                throw new ArgumentException("Title cannot exceed 100 characters.");
-            if(director.Length > 20)
-                throw new ArgumentException("Director name cannot exceed 100 characters.");
-            */
-
-            Title = title;
-            Director = director;
-            ReleaseYear = releaseYear;
-            Status = status;
+            Watched,
+            Watchlisted
         }
 
-        public override string ToString()
+        public class Movie
         {
-            return $"Title: {Title}, Director: {Director}, Year: {ReleaseYear}, Status: {Status}";
+            public string Title { get; set; }
+            public string Director { get; set; }
+            public int ReleaseYear { get; set; }
+            public MovieStatus Status { get; set; }
+            public string Genre { get; set; }
+
+            public Movie(string title, string director, int releaseYear, MovieStatus status, string genre = "Unknown")
+            {
+                /*
+
+
+                if (releaseYear < 1000 || releaseYear > 9999)
+                    throw new ArgumentException("Release year must be a 4-digit number.");
+                if(title.Length > 20)
+                    throw new ArgumentException("Title cannot exceed 100 characters.");
+                if(director.Length > 20)
+                    throw new ArgumentException("Director name cannot exceed 100 characters.");
+
+
+                Title = title;
+                Director = director;
+                ReleaseYear = releaseYear;
+                Status = status;
+                Genre = genre;
+            }
+
+            public override string ToString()
+            {
+                return $"Title: {Title}, Director: {Director}, Year: {ReleaseYear}, Genre:{Genre}, Status: {Status}";
+            }
         }
-    }
 
-
+    */
     internal class Program
     {
         static void showlogo()
         {
-            string text = "Welcome to Your Movie manager YMDB";
+            string text = @"                                 _______________________________________
+                                |                                       |    
+                                | Welcome to Your Movie manager YMDB    |
+                                |_______________________________________|";
             int conswidth = Console.WindowWidth;
 
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -72,8 +89,22 @@ namespace ymdb
 
         }
 
+        static MovieRepository repository = new MovieRepository();
+
         static void Main()
         {
+            /*
+                        var customer = new Movie("The Shawshank Redemption", "Frank Darabont", 1994, MovieStatus.Watched, "Drama");
+                        string jsonString = JsonSerializer.Serialize(customer);
+                        File.WriteAllText("Data.json", jsonString);
+
+
+                        string jsonString1 = File.ReadAllText("Data.json");
+                        var customer1 = JsonSerializer.Deserialize(jsonString);
+                        Console.WriteLine($"Name: {customer.Name}, Age: {customer.Age}, Address: {customer.Address}");
+            */
+
+
             showlogo();
             while (true)
             {
@@ -97,14 +128,13 @@ namespace ymdb
                         SearchByTitle();
                         break;
                     case 6:
-                    Console.Write("Exiting program");
-                    for (int i = 0; i < 3; i++)
-                    {
-                        Thread.Sleep(500);    // wait 0.5 seconds
-                        Console.Write("."); 
-                    }
-                    Environment.Exit(0);
-                    break;
+                        Console.Write("Exiting program");
+                        for (int i = 0; i < 4; i++)
+                        {
+                            Thread.Sleep(500);
+                            Console.Write(".");
+                        }
+                        break;
                 }
             }
         }
@@ -113,13 +143,14 @@ namespace ymdb
         {
             while (true)
             {
+
                 Console.WriteLine(@"
-                    1) Add a movie you've watched / you want to watch it later
-                    2) Delete a movie from watchlist
-                    3) Update a movie (if you watched it)
-                    4) Search movies by year
-                    5) Search movies by title
-                    6) Exit
+        [1] Add a movie you've watched / you want to watch it later
+        [2] Delete a movie from watchlist
+        [3] Update a movie (if you watched it)
+        [4] Search movies by year
+        [5] Search movies by title
+        [6] Exit
                     "
                 );
 
@@ -136,39 +167,82 @@ namespace ymdb
                 Console.Clear();
                 Console.WriteLine("Invalid input. Please enter a number between 1 and 6.");
             }
+
         }
-
-
 
 
 
 
         static void Add()
         {
-            Console.WriteLine("Add movie to your watchlist or you have watched it.");
-            Console.Write("enter the title: ");
-            string title = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(title))
-                throw new ArgumentException("Title cannot be empty.");
-
-            if (title.Length > 40)
+            try
             {
-                Console.WriteLine("Title cannot exceed 40 characters.");
-                return;
+                Console.WriteLine("Add movie to your watchlist or you have watched it.");
+
+                Console.Write("Enter the title: ");
+                string title = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    Console.WriteLine("Title cannot be empty.");
+                    return;
+                }
+
+                Console.Write("Enter the director: ");
+                string director = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(director))
+                {
+                    Console.WriteLine("Director name cannot be empty.");
+                    return;
+                }
+
+                Console.Write("Enter the release year (4-digit): ");
+                if (!int.TryParse(Console.ReadLine(), out int releaseYear) || releaseYear < 1000 || releaseYear > 9999)
+                {
+                    Console.WriteLine("Invalid release year. Must be a 4-digit number.");
+                    return;
+                }
+
+                Console.WriteLine("Choose the status of the movie:");
+                Console.WriteLine("1) Watched");
+                Console.WriteLine("2) Watchlisted");
+                Console.Write("Enter your choice (1 or 2): ");
+                string statusInput = Console.ReadLine();
+                MovieStatus status = statusInput == "1" ? MovieStatus.Watched : MovieStatus.Watchlisted;
+
+                Console.WriteLine("Choose the genre of the movie:");
+                Console.WriteLine("1) Action");
+                Console.WriteLine("2) Comedy");
+                Console.WriteLine("3) Drama");
+                Console.WriteLine("4) Horror");
+                Console.WriteLine("5) Sci-Fi");
+                Console.WriteLine("6) Romance");
+                Console.WriteLine("7) Thriller");
+                Console.Write("Enter your choice (1-7): ");
+
+                string[] genres = { "Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Thriller" };
+                string genreInput = Console.ReadLine();
+                int genreIndex = 0;
+
+                if (!int.TryParse(genreInput, out genreIndex) || genreIndex < 1 || genreIndex > genres.Length)
+                {
+                    Console.WriteLine("Invalid genre choice. Defaulting to 'Unknown'.");
+                    genreIndex = 0;
+                }
+
+                string genre = genreIndex > 0 ? genres[genreIndex - 1] : "Unknown";
+
+                // Create and save movie
+                Movie movie = new Movie(title, director, releaseYear, status, genre);
+                repository.Add(movie);
+
+                Console.WriteLine("\n Movie added successfully!");
+                Console.WriteLine(movie.ToString());
+
             }
-
-            Console.Write("enter the director: ");
-            string director = Console.ReadLine();
-            Console.Write("enter the release year (4-digit): ");
-            string releaseYear = Console.ReadLine();
-            Console.WriteLine("Choose the status of the movie:");
-            Console.WriteLine("1) Watched");
-            Console.WriteLine("2) Watchlisted");
-            Console.Write("Enter your choice (1 or 2): ");
-            string statusInput = Console.ReadLine();
-            MovieStatus status = statusInput == "1" ? MovieStatus.Watched : MovieStatus.Watchlisted;
-
-            Movie movie = new Movie(title, director, releaseYear.Length == 4 ? int.Parse(releaseYear) : throw new ArgumentException("Release year must be a 4-digit number."), status);
+            catch (Exception ex)
+            {
+                Console.WriteLine(" An error occurred while adding the movie: " + ex.Message);
+            }
         }
 
 
@@ -177,18 +251,19 @@ namespace ymdb
 
 
 
-/*
-The Shawshank Redemption	            1994	Frank Darabont	    Drama
-The Dark Knight	                        2008	Christopher Nolan	Action, Crime
-Inception	                            2010 	Christopher Nolan	Sci-Fi, Action
-Pulp Fiction	                        1994	Quentin Tarantino	Crime, Drama
-Parasite	                            2019	Bong Joon-ho	    Thriller, Dark Comedy
-Spirited Away	                        2001	Hayao Miyazaki	    Fantasy, Adventure
-Get Out	                                2017    Jordan Peele	    Horror, Thriller
-The Godfather	                        1972	Francis Coppola	    Crime, Drama
-Mad Max: Fury Road	                    2015	George Miller	    Action, Adventure
-Eternal Sunshine of the Spotless Mind	2004	Michel Gondry	    Sci-Fi, Romance
-*/
+
+        /*
+        The Shawshank Redemption	            1994	Frank Darabont	    Drama
+        The Dark Knight	                        2008	Christopher Nolan	Action, Crime
+        Inception	                            2010 	Christopher Nolan	Sci-Fi, Action
+        Pulp Fiction	                        1994	Quentin Tarantino	Crime, Drama
+        Parasite	                            2019	Bong Joon-ho	    Thriller, Dark Comedy
+        Spirited Away	                        2001	Hayao Miyazaki	    Fantasy, Adventure
+        Get Out	                                2017    Jordan Peele	    Horror, Thriller
+        The Godfather	                        1972	Francis Coppola	    Crime, Drama
+        Mad Max: Fury Road	                    2015	George Miller	    Action, Adventure
+        Eternal Sunshine of the Spotless Mind	2004	Michel Gondry	    Sci-Fi, Romance
+        */
 
 
 
@@ -245,7 +320,7 @@ Eternal Sunshine of the Spotless Mind	2004	Michel Gondry	    Sci-Fi, Romance
         {
             // This method should list all movies sorted by year.
             // Implementation will depend on how you store the movies.
-            
+
         }
         static void SearchByYear()
         {
@@ -265,7 +340,7 @@ Eternal Sunshine of the Spotless Mind	2004	Michel Gondry	    Sci-Fi, Romance
 
         }
         static void SearchByTitle()
-        { 
+        {
             // This method should search movies by title.
             // Implementation will depend on how you store the movies.
         }
