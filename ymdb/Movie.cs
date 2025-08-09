@@ -28,7 +28,7 @@ namespace ymdb
             Genre = genre;
         }
 
-        // Overriding ToString() to display movie details nicely in the console
+        // to display movie 
         public string print()
         {
             return $"Title: {Title}, Director: {Director}, Year: {ReleaseYear}, Genre: {Genre}\n Status: {Status}";
