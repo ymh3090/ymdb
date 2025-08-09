@@ -28,48 +28,6 @@ using System.Text;
 
 namespace ymdb
 {
-    /*
-        public enum MovieStatus
-        {
-            Watched,
-            Watchlisted
-        }
-
-        public class Movie
-        {
-            public string Title { get; set; }
-            public string Director { get; set; }
-            public int ReleaseYear { get; set; }
-            public MovieStatus Status { get; set; }
-            public string Genre { get; set; }
-
-            public Movie(string title, string director, int releaseYear, MovieStatus status, string genre = "Unknown")
-            {
-                /*
-
-
-                if (releaseYear < 1000 || releaseYear > 9999)
-                    throw new ArgumentException("Release year must be a 4-digit number.");
-                if(title.Length > 20)
-                    throw new ArgumentException("Title cannot exceed 100 characters.");
-                if(director.Length > 20)
-                    throw new ArgumentException("Director name cannot exceed 100 characters.");
-
-
-                Title = title;
-                Director = director;
-                ReleaseYear = releaseYear;
-                Status = status;
-                Genre = genre;
-            }
-
-            public override string ToString()
-            {
-                return $"Title: {Title}, Director: {Director}, Year: {ReleaseYear}, Genre:{Genre}, Status: {Status}";
-            }
-        }
-
-    */
     internal class Program
     {
         static void showlogo()
@@ -93,18 +51,6 @@ namespace ymdb
 
         static void Main()
         {
-            /*
-                        var customer = new Movie("The Shawshank Redemption", "Frank Darabont", 1994, MovieStatus.Watched, "Drama");
-                        string jsonString = JsonSerializer.Serialize(customer);
-                        File.WriteAllText("Data.json", jsonString);
-
-
-                        string jsonString1 = File.ReadAllText("Data.json");
-                        var customer1 = JsonSerializer.Deserialize(jsonString);
-                        Console.WriteLine($"Name: {customer.Name}, Age: {customer.Age}, Address: {customer.Address}");
-            */
-
-
             showlogo();
             while (true)
             {
@@ -128,12 +74,16 @@ namespace ymdb
                         SearchByTitle();
                         break;
                     case 6:
+                        Console.Clear();
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Thank you for using YMDB! Goodbye!");
                         Console.Write("Exiting program");
-                        for (int i = 0; i < 4; i++)
+                        for (int i = 0; i < 5; i++)
                         {
                             Thread.Sleep(500);
                             Console.Write(".");
                         }
+                        Environment.Exit(0);
                         break;
                 }
             }
@@ -141,8 +91,8 @@ namespace ymdb
 
         static int ShowMenu()
         {
-            while (true)
-            {
+            while (true){
+            
 
                 Console.WriteLine(@"
         [1] Add a movie you've watched / you want to watch it later
@@ -181,9 +131,10 @@ namespace ymdb
 
                 Console.Write("Enter the title: ");
                 string title = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(title))
+                if (string.IsNullOrWhiteSpace(title) || !title.Any(char.IsLetter))
                 {
-                    Console.WriteLine("Title cannot be empty.");
+                    Console.Clear();
+                    Console.WriteLine("Title msut contain letters.");
                     return;
                 }
 
@@ -191,17 +142,20 @@ namespace ymdb
                 string director = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(director))
                 {
+                    Console.Clear();
                     Console.WriteLine("Director name cannot be empty.");
                     return;
                 }
 
                 Console.Write("Enter the release year (4-digit): ");
-                if (!int.TryParse(Console.ReadLine(), out int releaseYear) || releaseYear < 1000 || releaseYear > 9999)
+                if (!int.TryParse(Console.ReadLine(), out int releaseYear) || releaseYear < 1850 || releaseYear > DateTime.Now.Year + 1)
                 {
+                    Console.Clear();
                     Console.WriteLine("Invalid release year. Must be a 4-digit number.");
                     return;
                 }
 
+                Console.Clear();
                 Console.WriteLine("Choose the status of the movie:");
                 Console.WriteLine("1) Watched");
                 Console.WriteLine("2) Watchlisted");
@@ -209,21 +163,16 @@ namespace ymdb
                 string statusInput = Console.ReadLine();
                 MovieStatus status = statusInput == "1" ? MovieStatus.Watched : MovieStatus.Watchlisted;
 
+                Console.Clear();
                 Console.WriteLine("Choose the genre of the movie:");
-                Console.WriteLine("1) Action");
-                Console.WriteLine("2) Comedy");
-                Console.WriteLine("3) Drama");
-                Console.WriteLine("4) Horror");
-                Console.WriteLine("5) Sci-Fi");
-                Console.WriteLine("6) Romance");
-                Console.WriteLine("7) Thriller");
-                Console.Write("Enter your choice (1-7): ");
+                Console.WriteLine("[1] Action    [2] Comedy   [3] Drama    [4] Horror   [5] Sci-Fi   [6] Romance  [7] Thriller");
+                Console.Write("\nEnter your choice (1-7): ");
 
                 string[] genres = { "Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Thriller" };
-                string genreInput = Console.ReadLine();
+                string Input = Console.ReadLine();
                 int genreIndex = 0;
 
-                if (!int.TryParse(genreInput, out genreIndex) || genreIndex < 1 || genreIndex > genres.Length)
+                if (!int.TryParse(Input, out genreIndex) || genreIndex < 1 || genreIndex > genres.Length)
                 {
                     Console.WriteLine("Invalid genre choice. Defaulting to 'Unknown'.");
                     genreIndex = 0;
@@ -231,18 +180,19 @@ namespace ymdb
 
                 string genre = genreIndex > 0 ? genres[genreIndex - 1] : "Unknown";
 
-                // Create and save movie
                 Movie movie = new Movie(title, director, releaseYear, status, genre);
                 repository.Add(movie);
 
                 Console.WriteLine("\n Movie added successfully!");
-                Console.WriteLine(movie.ToString());
+                Console.WriteLine(movie.print());
 
             }
             catch (Exception ex)
             {
                 Console.WriteLine(" An error occurred while adding the movie: " + ex.Message);
             }
+            Console.Clear();
+            
         }
 
 
